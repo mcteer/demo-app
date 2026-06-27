@@ -28,7 +28,15 @@ func main() {
 	}
 	defer pool.Close()
 
-	h := handlers.New(pool)
+	reload := func(ctx context.Context) error {
+		next, err := config.Load()
+		if err != nil {
+			return err
+		}
+		return pool.Reload(ctx, next.DB)
+	}
+
+	h := handlers.New(pool, reload)
 
 	r := chi.NewRouter()
 	r.Get("/healthz", h.Healthz)

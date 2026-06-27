@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -10,21 +11,22 @@ import (
 	"github.com/demo-app/catalog-service/internal/db"
 	"github.com/demo-app/catalog-service/internal/store"
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 //go:embed admin.html
 var adminHTML []byte
 
 type Handler struct {
-	pool  *pgxpool.Pool
-	store *store.Store
+	pool   *db.Pool
+	store  *store.Store
+	reload func(context.Context) error
 }
 
-func New(pool *pgxpool.Pool) *Handler {
+func New(pool *db.Pool, reload func(context.Context) error) *Handler {
 	return &Handler{
-		pool:  pool,
-		store: store.New(pool),
+		pool:   pool,
+		store:  store.New(pool.Underlying()),
+		reload: reload,
 	}
 }
 
@@ -33,7 +35,7 @@ func (h *Handler) Healthz(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *Handler) Readyz(w http.ResponseWriter, r *http.Request) {
-	if err := db.Ready(r.Context(), h.pool); err != nil {
+	if err := h.pool.Ready(r.Context()); err != nil {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
 			"status": "not ready",
 			"error":  err.Error(),
