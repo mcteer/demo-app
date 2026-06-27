@@ -1,33 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: catalog-service
-  namespace: catalog
+  name: my-service
+  namespace: my-ns-dev
   labels:
-    app: catalog-service
+    app: my-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: catalog-service
+      app: my-service
   template:
     metadata:
       labels:
-        app: catalog-service
+        app: my-service
     spec:
-      serviceAccountName: catalog-service
+      serviceAccountName: my-service
       containers:
-        - name: catalog-service
+        - name: my-service
           image: catalog-service:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           envFrom:
             - secretRef:
-                name: db-credentials
+                name: my-service-db
           env:
             - name: DB_HOST
-              value: postgres.catalog.svc.cluster.local
+              value: postgres.my-ns-dev.svc.cluster.local
             - name: DB_PORT
               value: "5432"
             - name: DB_NAME

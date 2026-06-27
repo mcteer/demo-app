@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: catalog
+  namespace: my-ns-dev
   labels:
     app: postgres
 spec:
@@ -26,10 +26,7 @@ spec:
             - name: POSTGRES_USER
               value: catalog_app
             - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: db-credentials
-                  key: DB_PASSWORD
+              value: dev-bootstrap-local-only
           volumeMounts:
             - name: init-sql
               mountPath: /docker-entrypoint-initdb.d
@@ -54,7 +51,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-init
-  namespace: catalog
+  namespace: my-ns-dev
 data:
   0001_init.sql: |
     CREATE TABLE IF NOT EXISTS products (
@@ -75,7 +72,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: catalog
+  namespace: my-ns-dev
   labels:
     app: postgres
 spec:

@@ -2,16 +2,18 @@ package config
 
 import (
 	"fmt"
+	"net"
+	"net/url"
 	"os"
 )
 
 type DBConfig struct {
-	Host     string
-	Port     string
-	Name     string
-	User     string
-	Password string
-	SSLMode  string
+	Host       string
+	Port       string
+	Name       string
+	User       string
+	Credential string
+	SSLMode    string
 }
 
 type Config struct {
@@ -30,7 +32,7 @@ func Load() (Config, error) {
 		Port:     os.Getenv("DB_PORT"),
 		Name:     os.Getenv("DB_NAME"),
 		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
+		Credential: os.Getenv("DB_PASSWORD"),
 		SSLMode:  os.Getenv("DB_SSLMODE"),
 	}
 
@@ -46,7 +48,7 @@ func Load() (Config, error) {
 	if db.User == "" {
 		return Config{}, fmt.Errorf("DB_USER is required")
 	}
-	if db.Password == "" {
+	if db.Credential == "" {
 		return Config{}, fmt.Errorf("DB_PASSWORD is required")
 	}
 	if db.SSLMode == "" {
@@ -59,9 +61,31 @@ func Load() (Config, error) {
 	}, nil
 }
 
-func (d DBConfig) DSN() string {
-	return fmt.Sprintf(
-		"host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
-		d.Host, d.Port, d.Name, d.User, d.Password, d.SSLMode,
-	)
+func (d DBConfig) ConnectionURL() (string, error) {
+	if d.Host == "" || d.Name == "" || d.User == "" || d.Credential == "" {
+		return "", fmt.Errorf("incomplete database configuration")
+	}
+
+	port := d.Port
+	if port == "" {
+		port = "5432"
+	}
+
+	sslmode := d.SSLMode
+	if sslmode == "" {
+		sslmode = "disable"
+	}
+
+	u := &url.URL{
+		Scheme: "postgres",
+		Host:   net.JoinHostPort(d.Host, port),
+		Path:   "/" + d.Name,
+	}
+	u.User = url.UserPassword(d.User, d.Credential)
+
+	q := u.Query()
+	q.Set("sslmode", sslmode)
+	u.RawQuery = q.Encode()
+
+	return u.String(), nil
 }

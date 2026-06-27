@@ -50,7 +50,7 @@ All database configuration is read from environment variables in `internal/confi
 Apply manifests (includes dev Postgres for sandbox/demo):
 
 ```bash
-kubectl apply -f deploy/
+kubectl apply -f k8s/
 ```
 
 Build and load the image locally (e.g. with kind or minikube):
