@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "repo": "https://github.com/mcteer/demo-app",
+  "contact": {
+    "team": "demo-team",
+    "email": "demo-team@example.com"
+  },
+  "stack": {
+    "runtime": "kubernetes",
+    "language": "Go 1.22",
+    "environments": ["dev", "prod"],
+    "applications": {
+      "my-service": "a simple app to manage inventory in a Postgres database"
+    }
+  },
+  "services": {
+    "vault-dynamic-secrets": {
+      "datastore": "postgres",
+      "access": "read+write to application schema",
+      "environments": ["dev", "prod"],
+      "kubernetes": {
+        "namespaces": ["my-ns-dev", "my-ns-prod"],
+        "service_accounts": ["my-service"],
+        "secret_delivery": "vso"
+      },
+      "constraints": {
+        "caches_connection_at_boot": false,
+        "connection_pooler": null
+      }
+    }
+  },
+  "feedback": {}
+}
