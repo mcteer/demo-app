@@ -1,0 +1,19 @@
+{
+  "standard": "vault-dynamic-secrets",
+  "artifact_root": "/app/consumers/demo-app",
+  "verified_at": "2026-06-27T16:43:05.461475+00:00",
+  "static_gate": "pass",
+  "behavioral_gate": true,
+  "behavioral_evidence": {
+    "standard": "vault-dynamic-secrets",
+    "verified_at": "2026-06-27T16:43:05.432560+00:00",
+    "auth_stand_in": "jwt",
+    "bound_subject": "system:serviceaccount:catalog:catalog-service",
+    "creds_path": "database/creds/catalog-service",
+    "lease_duration_seconds": 900,
+    "max_ttl_seconds": 1800,
+    "postgres_query": "SELECT COUNT(*) FROM orders.orders",
+    "order_count": 3,
+    "result": "pass"
+  }
+}

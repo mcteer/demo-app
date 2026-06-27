@@ -1,0 +1,44 @@
+name: Vault integration verify
+
+on:
+  pull_request:
+    paths:
+      - "vault/**"
+      - "k8s/**"
+      - "integration.params.json"
+  push:
+    branches: [main]
+    paths:
+      - "vault/**"
+      - "k8s/**"
+      - "integration.params.json"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout Wath standards
+        uses: actions/checkout@v4
+        with:
+          repository: mcteer/wath
+          path: wath
+          sparse-checkout: |
+            standards/security/vault-dynamic-secrets
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Python deps
+        run: pip install -r wath/standards/security/vault-dynamic-secrets/conformance/requirements.txt
+      - name: Install toolchain
+        run: |
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt-get update && sudo apt-get install -y vault
+          curl -L https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+      - name: Run conformance gate
+        run: |
+          WATH_ARTIFACT_ROOT="${{ github.workspace }}"
+          bash wath/standards/security/vault-dynamic-secrets/conformance/verify.sh

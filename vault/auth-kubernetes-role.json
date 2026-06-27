@@ -1,0 +1,6 @@
+{
+  "bound_service_account_names": ["catalog-service"],
+  "bound_service_account_namespaces": ["catalog"],
+  "policies": ["catalog-service-db-readwrite"],
+  "ttl": "24h"
+}
