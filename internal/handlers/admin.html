@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catalog Admin</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background: #f4f4f5;
+      color: #18181b;
+    }
+    .wrap { max-width: 900px; margin: 0 auto; }
+    h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+    .sub { color: #71717a; margin: 0 0 1.5rem; font-size: 0.9rem; }
+    .card {
+      background: #fff;
+      border: 1px solid #e4e4e7;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .card h2 { margin: 0 0 1rem; font-size: 1rem; }
+    form { display: grid; gap: 0.75rem; }
+    .row { display: grid; grid-template-columns: 1fr 1fr 140px auto; gap: 0.75rem; align-items: end; }
+    label { display: block; font-size: 0.8rem; color: #52525b; margin-bottom: 0.25rem; }
+    input {
+      width: 100%;
+      padding: 0.5rem 0.65rem;
+      border: 1px solid #d4d4d8;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    button {
+      padding: 0.5rem 0.9rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .primary { background: #18181b; color: #fff; }
+    .primary:hover { background: #27272a; }
+    .secondary { background: #e4e4e7; color: #18181b; }
+    .danger { background: #fef2f2; color: #b91c1c; }
+    .danger:hover { background: #fee2e2; }
+    .ghost { background: transparent; color: #52525b; border: 1px solid #d4d4d8; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 0.65rem 0.5rem; border-bottom: 1px solid #f4f4f5; }
+    th { color: #71717a; font-weight: 500; font-size: 0.8rem; }
+    .actions { display: flex; gap: 0.4rem; }
+    .actions button { padding: 0.35rem 0.6rem; font-size: 0.8rem; }
+    .price::before { content: "$"; color: #71717a; }
+    .price { font-variant-numeric: tabular-nums; }
+    #flash {
+      padding: 0.65rem 0.85rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      display: none;
+      font-size: 0.9rem;
+    }
+    #flash.ok { display: block; background: #ecfdf5; color: #047857; }
+    #flash.err { display: block; background: #fef2f2; color: #b91c1c; }
+    .empty { color: #71717a; padding: 1rem 0; text-align: center; }
+    @media (max-width: 700px) {
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Catalog Admin</h1>
+    <p class="sub">Demo interface for managing the products table.</p>
+    <div id="flash"></div>
+
+    <div class="card">
+      <h2 id="form-title">Add product</h2>
+      <form id="product-form">
+        <input type="hidden" id="product-id" value="">
+        <div class="row">
+          <div>
+            <label for="name">Name</label>
+            <input id="name" required placeholder="Field Notebook">
+          </div>
+          <div>
+            <label for="sku">SKU</label>
+            <input id="sku" required placeholder="FN-001">
+          </div>
+          <div>
+            <label for="price">Price (cents)</label>
+            <input id="price" type="number" min="0" required placeholder="1200">
+          </div>
+          <div style="display:flex;gap:0.4rem;">
+            <button type="submit" class="primary" id="submit-btn">Add</button>
+            <button type="button" class="ghost" id="cancel-btn" hidden>Cancel</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Products</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>SKU</th>
+            <th>Price</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="products"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('product-form');
+    const productsEl = document.getElementById('products');
+    const flashEl = document.getElementById('flash');
+    const productIdEl = document.getElementById('product-id');
+    const formTitle = document.getElementById('form-title');
+    const submitBtn = document.getElementById('submit-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+
+    function flash(msg, ok = true) {
+      flashEl.textContent = msg;
+      flashEl.className = ok ? 'ok' : 'err';
+      setTimeout(() => { flashEl.className = ''; flashEl.textContent = ''; }, 3500);
+    }
+
+    function formatPrice(cents) {
+      return (cents / 100).toFixed(2);
+    }
+
+    function payload() {
+      return {
+        name: document.getElementById('name').value.trim(),
+        sku: document.getElementById('sku').value.trim(),
+        price_cents: parseInt(document.getElementById('price').value, 10),
+      };
+    }
+
+    function resetForm() {
+      form.reset();
+      productIdEl.value = '';
+      formTitle.textContent = 'Add product';
+      submitBtn.textContent = 'Add';
+      cancelBtn.hidden = true;
+    }
+
+    function startEdit(p) {
+      productIdEl.value = p.id;
+      document.getElementById('name').value = p.name;
+      document.getElementById('sku').value = p.sku;
+      document.getElementById('price').value = p.price_cents;
+      formTitle.textContent = 'Edit product #' + p.id;
+      submitBtn.textContent = 'Save';
+      cancelBtn.hidden = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function api(path, opts = {}) {
+      const res = await fetch(path, {
+        headers: { 'Content-Type': 'application/json' },
+        ...opts,
+      });
+      const body = res.status === 204 ? null : await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(body?.error || res.statusText);
+      }
+      return body;
+    }
+
+    async function loadProducts() {
+      const products = await api('/products');
+      if (!products.length) {
+        productsEl.innerHTML = '<tr><td colspan="5" class="empty">No products yet.</td></tr>';
+        return;
+      }
+      productsEl.innerHTML = products.map(p => `
+        <tr>
+          <td>${p.id}</td>
+          <td>${escapeHtml(p.name)}</td>
+          <td><code>${escapeHtml(p.sku)}</code></td>
+          <td class="price">${formatPrice(p.price_cents)}</td>
+          <td>
+            <div class="actions">
+              <button type="button" class="secondary" data-edit='${JSON.stringify(p)}'>Edit</button>
+              <button type="button" class="danger" data-delete="${p.id}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const data = payload();
+        const id = productIdEl.value;
+        if (id) {
+          await api('/products/' + id, { method: 'PUT', body: JSON.stringify(data) });
+          flash('Product updated.');
+        } else {
+          await api('/products', { method: 'POST', body: JSON.stringify(data) });
+          flash('Product added.');
+        }
+        resetForm();
+        await loadProducts();
+      } catch (err) {
+        flash(err.message, false);
+      }
+    });
+
+    cancelBtn.addEventListener('click', resetForm);
+
+    productsEl.addEventListener('click', async (e) => {
+      const editBtn = e.target.closest('[data-edit]');
+      if (editBtn) {
+        startEdit(JSON.parse(editBtn.dataset.edit));
+        return;
+      }
+      const delBtn = e.target.closest('[data-delete]');
+      if (delBtn) {
+        const id = delBtn.dataset.delete;
+        if (!confirm('Delete product #' + id + '?')) return;
+        try {
+          await api('/products/' + id, { method: 'DELETE' });
+          flash('Product deleted.');
+          if (productIdEl.value === id) resetForm();
+          await loadProducts();
+        } catch (err) {
+          flash(err.message, false);
+        }
+      }
+    });
+
+    loadProducts().catch(err => flash(err.message, false));
+  </script>
+</body>
+</html>
