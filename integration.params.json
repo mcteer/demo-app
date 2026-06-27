@@ -1,0 +1,17 @@
+{
+  "app_name": "catalog-service",
+  "runtime": "kubernetes",
+  "auth_method": "kubernetes",
+  "db_role": "catalog-service",
+  "default_ttl_seconds": 900,
+  "max_ttl_seconds": 1800,
+  "creds_path": "database/creds/catalog-service",
+  "policy_capabilities": ["read"],
+  "identity_binding": {
+    "policy_name": "catalog-service-db-read",
+    "k8s_service_accounts": ["catalog-service"],
+    "k8s_namespaces": ["catalog"]
+  },
+  "secret_delivery": "vso",
+  "creation_statements_summary": "GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\"; GRANT USAGE ON SCHEMA public TO \"{{name}}\";"
+}

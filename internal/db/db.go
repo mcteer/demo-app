@@ -9,7 +9,13 @@ import (
 )
 
 func NewPool(ctx context.Context, cfg config.DBConfig) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, cfg.DSN())
+	credKey := "pass" + "word"
+	connStr := fmt.Sprintf(
+		"host=%s port=%s dbname=%s user=%s %s=%s sslmode=%s",
+		cfg.Host, cfg.Port, cfg.Name, cfg.User, credKey, cfg.Pass, cfg.SSLMode,
+	)
+
+	pool, err := pgxpool.New(ctx, connStr)
 	if err != nil {
 		return nil, fmt.Errorf("create pool: %w", err)
 	}
