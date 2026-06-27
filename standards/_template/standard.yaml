@@ -1,0 +1,18 @@
+id: {{STANDARD_ID}}
+version: 1
+owner: {{OWNER}}
+rule_prefix: {{RULE_PREFIX}}
+rules:
+  - {{RULE_PREFIX}}-001
+  - {{RULE_PREFIX}}-002
+schema: schema/integration.params.schema.json
+conformance_entry: conformance/verify.sh
+runtimes:
+  - kubernetes
+services:
+  - TODO
+onboarding:
+  artifacts:
+    - integration.params.json
+  consumer_rule: {{STANDARD_ID}}
+  pr_template: .github/PULL_REQUEST_TEMPLATE/wath-onboarding.md

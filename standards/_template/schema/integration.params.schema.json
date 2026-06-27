@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wath.internal/standards/{{STANDARD_ID}}/integration.params.schema.json",
+  "title": "{{STANDARD_ID}} integration parameters",
+  "description": "Typed source of truth the agent MUST emit before generating artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["app_name"],
+  "properties": {
+    "app_name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,40}$"
+    }
+  }
+}

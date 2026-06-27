@@ -1,0 +1,15 @@
+# Wath standards registry — marketplace catalog of platform service integrations.
+# The engine loads this file to discover available standards at runtime.
+
+standards:
+  - id: vault-dynamic-secrets
+    path: security/vault-dynamic-secrets
+    owner: security-engineering
+    version: 4
+    rule_prefix: VDS
+    runtimes:
+      - kubernetes
+      - nomad
+      - vm
+    services:
+      - hashicorp-vault

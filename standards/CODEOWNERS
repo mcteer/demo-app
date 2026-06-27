@@ -1,0 +1,4 @@
+# Standards registry ownership — each business unit owns its standards.
+# See CONTRIBUTING.md for how to add a new standard.
+
+/standards/security/ @security-engineering

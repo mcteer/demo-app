@@ -1,0 +1,17 @@
+{
+  "app_name": "orders-api",
+  "runtime": "kubernetes",
+  "auth_method": "kubernetes",
+  "db_role": "orders-api",
+  "default_ttl_seconds": 900,
+  "max_ttl_seconds": 1800,
+  "creds_path": "database/creds/orders-api",
+  "policy_capabilities": ["read"],
+  "identity_binding": {
+    "policy_name": "orders-api-db-read",
+    "k8s_service_accounts": ["orders-api"],
+    "k8s_namespaces": ["payments-dev", "payments-prod"]
+  },
+  "secret_delivery": "vso",
+  "creation_statements_summary": "GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA orders TO \"{{name}}\"; GRANT USAGE ON SCHEMA orders TO \"{{name}}\";"
+}

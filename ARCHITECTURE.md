@@ -120,7 +120,7 @@ metadata:
 type: Opaque
 stringData:
   DB_USER: catalog_app
-  DB_PASSWORD: "static-demo-password-change-me"   # long-lived, static — the tier-1 smell
+  DB_PASSWORD: (supplied at runtime via VSO-managed Secret — not committed)
 ```
 
 The Deployment sources these via `envFrom: [{ secretRef: { name: db-credentials } }]` (plus the

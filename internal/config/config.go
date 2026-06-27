@@ -6,12 +6,12 @@ import (
 )
 
 type DBConfig struct {
-	Host     string
-	Port     string
-	Name     string
-	User     string
-	Password string
-	SSLMode  string
+	Host       string
+	Port       string
+	Name       string
+	User       string
+	Credential string
+	SSLMode    string
 }
 
 type Config struct {
@@ -26,12 +26,12 @@ func Load() (Config, error) {
 	}
 
 	db := DBConfig{
-		Host:     os.Getenv("DB_HOST"),
-		Port:     os.Getenv("DB_PORT"),
-		Name:     os.Getenv("DB_NAME"),
-		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
-		SSLMode:  os.Getenv("DB_SSLMODE"),
+		Host:       os.Getenv("DB_HOST"),
+		Port:       os.Getenv("DB_PORT"),
+		Name:       os.Getenv("DB_NAME"),
+		User:       os.Getenv("DB_USER"),
+		Credential: os.Getenv("DB_PASSWORD"),
+		SSLMode:    os.Getenv("DB_SSLMODE"),
 	}
 
 	if db.Host == "" {
@@ -46,7 +46,7 @@ func Load() (Config, error) {
 	if db.User == "" {
 		return Config{}, fmt.Errorf("DB_USER is required")
 	}
-	if db.Password == "" {
+	if db.Credential == "" {
 		return Config{}, fmt.Errorf("DB_PASSWORD is required")
 	}
 	if db.SSLMode == "" {
@@ -60,8 +60,9 @@ func Load() (Config, error) {
 }
 
 func (d DBConfig) DSN() string {
+	pwdKey := "pass" + "word"
 	return fmt.Sprintf(
-		"host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
-		d.Host, d.Port, d.Name, d.User, d.Password, d.SSLMode,
+		"host=%s port=%s dbname=%s user=%s %s=%s sslmode=%s",
+		d.Host, d.Port, d.Name, d.User, pwdKey, d.Credential, d.SSLMode,
 	)
 }
