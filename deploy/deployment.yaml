@@ -22,10 +22,17 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
-          envFrom:
-            - secretRef:
-                name: db-credentials
           env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-db
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-service-db
+                  key: password
             - name: DB_HOST
               value: postgres.catalog.svc.cluster.local
             - name: DB_PORT
