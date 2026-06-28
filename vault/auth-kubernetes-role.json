@@ -1,0 +1,6 @@
+{
+  "bound_service_account_names": ["my-service"],
+  "bound_service_account_namespaces": ["my-ns-dev", "my-ns-prod"],
+  "policies": ["my-service-db-rw"],
+  "ttl": "24h"
+}
