@@ -17,6 +17,7 @@ on:
 
 env:
   WATH_STANDARD_REPO: https://github.com/mcteer/wath.git
+  # Pin a commit SHA here when you need reproducibility; main tracks the active standard.
   WATH_STANDARD_REF: main
 
 jobs:

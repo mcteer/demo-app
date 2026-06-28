@@ -15,6 +15,7 @@ spec:
       labels:
         app: catalog-service
     spec:
+      automountServiceAccountToken: false
       serviceAccountName: catalog-service
       containers:
         - name: catalog-service
