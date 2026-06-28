@@ -1,6 +1,6 @@
 {
   "standard": "vault-dynamic-secrets",
-  "verified_at": "2026-06-28T11:33:17.697400+00:00",
+  "verified_at": "2026-06-28T11:35:56.014474+00:00",
   "auth_stand_in": "jwt",
   "bound_subject": "system:serviceaccount:my-ns-dev:my-service",
   "creds_path": "database/creds/my-service",
