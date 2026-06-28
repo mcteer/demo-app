@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wath.internal/standards/security/vault-dynamic-secrets/integration.params.schema.json",
+  "title": "Vault dynamic-secrets integration parameters",
+  "description": "Typed source of truth the agent MUST emit before generating artifacts. The schema bounds the numeric/enumerated decisions so they cannot be fumbled in free-text HCL; conformance/test_conformance.py re-checks them and the rendered output.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "app_name",
+    "runtime",
+    "auth_method",
+    "db_role",
+    "default_ttl_seconds",
+    "max_ttl_seconds",
+    "creds_path",
+    "policy_capabilities",
+    "identity_binding",
+    "secret_delivery"
+  ],
+  "properties": {
+    "app_name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,40}$"
+    },
+    "runtime": {
+      "enum": ["kubernetes", "nomad", "vm"]
+    },
+    "auth_method": {
+      "description": "MUST be consistent with runtime (VDS-005); cross-checked in conformance.",
+      "enum": ["kubernetes", "jwt", "approle", "aws", "gcp", "azure"]
+    },
+    "db_role": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,40}$"
+    },
+    "creds_path": {
+      "description": "Exact dynamic-creds path. No wildcards (VDS-004).",
+      "type": "string",
+      "pattern": "^database/creds/[a-z][a-z0-9-]{1,40}$"
+    },
+    "default_ttl_seconds": {
+      "description": "VDS-002: ceiling 1800s.",
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 1800
+    },
+    "max_ttl_seconds": {
+      "description": "VDS-002: ceiling 3600s.",
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 3600
+    },
+    "policy_capabilities": {
+      "description": "VDS-003: read-only.",
+      "type": "array",
+      "items": { "enum": ["read"] },
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "identity_binding": {
+      "description": "VDS-006: specific workload identity, never '*'.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_name"],
+      "properties": {
+        "policy_name": { "type": "string", "pattern": "^(?!default$)[a-z][a-z0-9-]{1,60}$" },
+        "k8s_service_accounts": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^(?!\\*$).+" },
+          "minItems": 1
+        },
+        "k8s_namespaces": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^(?!\\*$).+" },
+          "minItems": 1
+        },
+        "bound_claims": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "secret_delivery": {
+      "description": "VDS-007: VSO or Agent Injector only.",
+      "enum": ["vso", "agent-injector"]
+    },
+    "creation_statements_summary": {
+      "description": "Human-readable note on the SQL grants requested; ratified by SME (see SKILL.md §6).",
+      "type": "string"
+    }
+  }
+}

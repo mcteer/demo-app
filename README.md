@@ -1,8 +1,7 @@
 # catalog-service
 
-A small, read-only HTTP API over a Postgres `products` table. This service is the "before" state
-for a live onboarding demo — it uses static database credentials delivered via environment variables
-(the tier-1 pattern that Wath will later replace with dynamic secrets).
+A small HTTP API over a Postgres `products` table. Database credentials are delivered via
+HashiCorp Vault dynamic secrets (tier-4), synced into the cluster by the Vault Secrets Operator.
 
 ## Endpoints
 
@@ -41,7 +40,7 @@ All database configuration is read from environment variables in `internal/confi
 | `DB_PORT`     | `5432`                               |
 | `DB_NAME`     | `catalog`                            |
 | `DB_USER`     | `catalog_app`                        |
-| `DB_PASSWORD` | (static password)                    |
+| `DB_PASSWORD` | (from VSO-managed Secret at runtime) |
 | `DB_SSLMODE`  | `disable` (demo) / `require` (prod)  |
 | `PORT`        | `8080` (default)                     |
 
@@ -50,7 +49,8 @@ All database configuration is read from environment variables in `internal/confi
 Apply manifests (includes dev Postgres for sandbox/demo):
 
 ```bash
-kubectl apply -f deploy/
+kubectl apply -f k8s/
+kubectl apply -f deploy/postgres.yaml
 ```
 
 Build and load the image locally (e.g. with kind or minikube):
@@ -82,7 +82,8 @@ internal/db/db.go               # pool construction, readiness check
 internal/handlers/handlers.go   # HTTP handlers
 internal/store/store.go         # product queries
 migrations/0001_init.sql        # schema + seed
-deploy/                         # Kubernetes manifests
+k8s/                            # Tier-4 app manifests (VSO + Deployment)
+deploy/                         # Dev Postgres for sandbox/demo
 Dockerfile
 docker-compose.yaml
 ```

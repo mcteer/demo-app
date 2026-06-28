@@ -1,0 +1,6 @@
+{
+  "bound_service_account_names": ["orders-api"],
+  "bound_service_account_namespaces": ["payments-dev", "payments-prod"],
+  "policies": ["orders-api-db-read"],
+  "ttl": "24h"
+}

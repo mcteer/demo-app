@@ -1,22 +1,16 @@
 # catalog-service — application architecture & build spec
 
 > **For the building agent:** this document specifies a small, realistic Postgres-backed
-> microservice. Build it exactly to the state described here — **tier-1 (static credentials)** —
-> and **stop**. Read the *Non-goals* section before you start; the most important instruction in
-> this file is what **not** to build.
+> microservice. The service consumes short-lived database credentials from HashiCorp Vault via
+> the Vault Secrets Operator (tier-4 dynamic secrets).
 
 ---
 
 ## 0. Why this app exists (context, not scope)
 
-This service is the **target of a live onboarding demo**. A separate system ("Wath") will, on
-stage, onboard this app from static database credentials to HashiCorp Vault **dynamic** secrets.
-For that demo to work, this app must *begin* in the state a real team would actually be in before
-they adopt dynamic secrets: a normal service that reads a Postgres database using a **static
-connection string delivered through a Kubernetes Secret**.
-
-Your job is to build that believable "before." You are **not** integrating Vault. The value of the
-demo is watching Wath add that later; if it is already here, there is nothing to demonstrate.
+This service is the **target of a live onboarding demo**. A separate system ("Wath") onboarded
+this app from static database credentials to HashiCorp Vault **dynamic** secrets. The integration
+artifacts (`integration.params.json`, `vault/`, `k8s/vso-dynamic-secret.yaml`) live in this repo.
 
 ---
 
@@ -63,13 +57,14 @@ catalog-service/
   internal/handlers/handlers.go   # the four HTTP handlers
   internal/store/store.go         # product queries
   migrations/0001_init.sql        # schema + seed
-  deploy/
+  k8s/
     namespace.yaml                # namespace: catalog
-    serviceaccount.yaml           # ServiceAccount: catalog-service  (see §6 — keep this!)
-    postgres.yaml                 # dev Postgres Deployment + Service (demo/sandbox only)
-    db-credentials.secret.yaml    # THE STATIC SECRET — tier-1 "before" (see §5)
-    deployment.yaml               # app Deployment, runs as the catalog-service SA
+    serviceaccount.yaml           # ServiceAccount: catalog-service
+    vso-dynamic-secret.yaml       # VaultDynamicSecret CR (VSO)
+    deployment.yaml               # app Deployment — creds from VSO-managed Secret
     service.yaml                  # ClusterIP Service
+  deploy/
+    postgres.yaml                 # dev Postgres Deployment + Service (demo/sandbox only)
   Dockerfile
   docker-compose.yaml             # local: app + postgres, static creds
   README.md
@@ -86,8 +81,8 @@ environment variables:
 DB_HOST       e.g. postgres.catalog.svc.cluster.local
 DB_PORT       e.g. 5432
 DB_NAME       e.g. catalog
-DB_USER       e.g. catalog_app
-DB_PASSWORD   e.g. (static password, tier-1)
+DB_USER       from VSO-managed Secret (key: username)
+DB_PASSWORD   from VSO-managed Secret (key: password)
 DB_SSLMODE    e.g. disable (demo) / require (prod)
 PORT          HTTP listen port, default 8080
 ```
@@ -105,28 +100,11 @@ requirement; the demo injects credentials before the pod starts.)
 
 ---
 
-## 5. The deliberate tier-1 state (build this, do not "fix" it)
+## 5. Tier-4 credential delivery (Vault + VSO)
 
-Credentials are delivered as a **static Kubernetes Secret** that the Deployment mounts as
-environment variables. This is the pattern Wath will later replace. Build it exactly:
-
-```yaml
-# deploy/db-credentials.secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: db-credentials
-  namespace: catalog
-type: Opaque
-stringData:
-  DB_USER: catalog_app
-  DB_PASSWORD: "static-demo-password-change-me"   # long-lived, static — the tier-1 smell
-```
-
-The Deployment sources these via `envFrom: [{ secretRef: { name: db-credentials } }]` (plus the
-non-secret `DB_HOST`/`DB_NAME`/etc. as plain env). The password is static, long-lived, and
-committed as a manifest — exactly the realistic "before" the demo improves on. **Leave it that
-way.**
+Credentials are **not** committed to the repo. The Vault Secrets Operator syncs short-lived
+`database/creds/catalog-service` credentials into the `catalog-service-db` Kubernetes Secret.
+The Deployment references `username` and `password` keys via `secretKeyRef`.
 
 ---
 
@@ -179,13 +157,11 @@ how you self-check the build.
 
 ---
 
-## 9. Signals the onboarding will detect (so the demo reads well)
+## 9. Integration signals
 
-You don't act on these, but building them faithfully makes the live detection step legible. The
-onboarding keys on: a **static credential** in `db-credentials.secret.yaml`, the app reading
-`DB_USER`/`DB_PASSWORD` from env, **no Vault wiring of any kind**, a read-only data access pattern,
-a dedicated ServiceAccount, and a declared runtime of Kubernetes. Keep all of these true and
-unambiguous.
+The onboarding layer keys on: **Vault dynamic secrets** via VSO, the app reading
+`DB_USER`/`DB_PASSWORD` from a VSO-managed Secret, a read-only data access pattern (with CRUD
+handlers for demo), a dedicated ServiceAccount, and a declared runtime of Kubernetes.
 
 ---
 
@@ -197,23 +173,14 @@ unambiguous.
 3. `kubectl apply -f deploy/` (with a cluster + the dev Postgres) yields a running pod under the
    `catalog-service` ServiceAccount in namespace `catalog`, passing readiness.
 4. Credential reading is confined to `internal/config/config.go`.
-5. There is **zero** reference to Vault, dynamic secrets, VSO, the Agent Injector, AppRole, or
-   Kubernetes auth anywhere in the repo.
+5. Vault integration artifacts are present under `vault/`, `k8s/`, and `integration.params.json`.
 
 ---
 
-## 11. Non-goals — do **not** build these (this is the demo)
+## 11. Non-goals
 
-- **No HashiCorp Vault integration.** No Vault client, no `vault` config, no policies, no roles.
-- **No dynamic secrets, no Vault Secrets Operator, no Agent Injector annotations.**
-- **No secret-management refactor.** The static Secret stays static.
-- **No auth method setup** (Kubernetes auth, AppRole, JWT/workload identity).
-- **No CI workflow for secret verification.**
-- **No `.cursor/` onboarding artifacts** (rules, `mcp.json`, requirements). Those belong to the
-  Wath onboarding layer and are added separately.
-
-If you find yourself improving how this app handles credentials, stop — that improvement *is* the
-demo, and it is performed live by Wath, not by you.
+- **No in-app Vault client.** Credential fetch is delegated to VSO; the app reads env vars only.
+- **No static credentials in repo.** No committed Secrets, DSNs, or long-lived passwords.
 
 ---
 
