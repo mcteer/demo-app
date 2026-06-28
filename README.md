@@ -1,8 +1,7 @@
 # catalog-service
 
-A small, read-only HTTP API over a Postgres `products` table. This service is the "before" state
-for a live onboarding demo — it uses static database credentials delivered via environment variables
-(the tier-1 pattern that Wath will later replace with dynamic secrets).
+A small HTTP API over a Postgres `products` table. Database credentials are delivered
+dynamically via HashiCorp Vault and the Vault Secrets Operator (tier-4).
 
 ## Endpoints
 
@@ -41,7 +40,7 @@ All database configuration is read from environment variables in `internal/confi
 | `DB_PORT`     | `5432`                               |
 | `DB_NAME`     | `catalog`                            |
 | `DB_USER`     | `catalog_app`                        |
-| `DB_PASSWORD` | (static password)                    |
+| `DB_PASSWORD` | supplied by VSO-managed Secret at runtime |
 | `DB_SSLMODE`  | `disable` (demo) / `require` (prod)  |
 | `PORT`        | `8080` (default)                     |
 
@@ -82,7 +81,10 @@ internal/db/db.go               # pool construction, readiness check
 internal/handlers/handlers.go   # HTTP handlers
 internal/store/store.go         # product queries
 migrations/0001_init.sql        # schema + seed
-deploy/                         # Kubernetes manifests
+deploy/                         # Legacy sandbox manifests (dev Postgres)
+k8s/                            # Vault dynamic-secrets integration (tier-4)
+integration.params.json         # Typed integration source of truth
+vault/                          # Vault policy and Kubernetes auth role
 Dockerfile
 docker-compose.yaml
 ```
