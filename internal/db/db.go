@@ -9,7 +9,7 @@ import (
 )
 
 func NewPool(ctx context.Context, cfg config.DBConfig) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, cfg.DSN())
+	pool, err := pgxpool.New(ctx, cfg.ConnectionString())
 	if err != nil {
 		return nil, fmt.Errorf("create pool: %w", err)
 	}

@@ -6,12 +6,7 @@ import (
 )
 
 type DBConfig struct {
-	Host     string
-	Port     string
-	Name     string
-	User     string
-	Password string
-	SSLMode  string
+	DSN string
 }
 
 type Config struct {
@@ -25,43 +20,50 @@ func Load() (Config, error) {
 		port = "8080"
 	}
 
-	db := DBConfig{
-		Host:     os.Getenv("DB_HOST"),
-		Port:     os.Getenv("DB_PORT"),
-		Name:     os.Getenv("DB_NAME"),
-		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
-		SSLMode:  os.Getenv("DB_SSLMODE"),
+	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
+		return Config{
+			Port: port,
+			DB:   DBConfig{DSN: dsn},
+		}, nil
 	}
 
-	if db.Host == "" {
+	host := os.Getenv("DB_HOST")
+	name := os.Getenv("DB_NAME")
+	user := os.Getenv("DB_USER")
+	dbPort := os.Getenv("DB_PORT")
+	sslMode := os.Getenv("DB_SSLMODE")
+	credential := os.Getenv("DB_PASSWORD")
+
+	if host == "" {
 		return Config{}, fmt.Errorf("DB_HOST is required")
 	}
-	if db.Port == "" {
-		db.Port = "5432"
+	if dbPort == "" {
+		dbPort = "5432"
 	}
-	if db.Name == "" {
+	if name == "" {
 		return Config{}, fmt.Errorf("DB_NAME is required")
 	}
-	if db.User == "" {
+	if user == "" {
 		return Config{}, fmt.Errorf("DB_USER is required")
 	}
-	if db.Password == "" {
-		return Config{}, fmt.Errorf("DB_PASSWORD is required")
+	if sslMode == "" {
+		sslMode = "disable"
 	}
-	if db.SSLMode == "" {
-		db.SSLMode = "disable"
+
+	dsn := fmt.Sprintf(
+		"host=%s port=%s dbname=%s user=%s sslmode=%s",
+		host, dbPort, name, user, sslMode,
+	)
+	if credential != "" {
+		dsn = fmt.Sprintf("%s password=%s", dsn, credential)
 	}
 
 	return Config{
 		Port: port,
-		DB:   db,
+		DB:   DBConfig{DSN: dsn},
 	}, nil
 }
 
-func (d DBConfig) DSN() string {
-	return fmt.Sprintf(
-		"host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
-		d.Host, d.Port, d.Name, d.User, d.Password, d.SSLMode,
-	)
+func (d DBConfig) ConnectionString() string {
+	return d.DSN
 }
