@@ -2,20 +2,16 @@ package config
 
 import (
 	"fmt"
-	"net"
-	"net/url"
 	"os"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DBConfig struct {
-	Host       string
-	Port       string
-	Name       string
-	User       string
-	Credential string
-	SSLMode    string
+	Host     string
+	Port     string
+	Name     string
+	User     string
+	Password string
+	SSLMode  string
 }
 
 type Config struct {
@@ -30,12 +26,12 @@ func Load() (Config, error) {
 	}
 
 	db := DBConfig{
-		Host:       os.Getenv("DB_HOST"),
-		Port:       os.Getenv("DB_PORT"),
-		Name:       os.Getenv("DB_NAME"),
-		User:       os.Getenv("DB_USER"),
-		Credential: os.Getenv("DB_PASSWORD"),
-		SSLMode:    os.Getenv("DB_SSLMODE"),
+		Host:     os.Getenv("DB_HOST"),
+		Port:     os.Getenv("DB_PORT"),
+		Name:     os.Getenv("DB_NAME"),
+		User:     os.Getenv("DB_USER"),
+		Password: os.Getenv("DB_PASSWORD"),
+		SSLMode:  os.Getenv("DB_SSLMODE"),
 	}
 
 	if db.Host == "" {
@@ -50,7 +46,7 @@ func Load() (Config, error) {
 	if db.User == "" {
 		return Config{}, fmt.Errorf("DB_USER is required")
 	}
-	if db.Credential == "" {
+	if db.Password == "" {
 		return Config{}, fmt.Errorf("DB_PASSWORD is required")
 	}
 	if db.SSLMode == "" {
@@ -63,16 +59,9 @@ func Load() (Config, error) {
 	}, nil
 }
 
-func (d DBConfig) PoolConfig() (*pgxpool.Config, error) {
-	connURL := &url.URL{
-		Scheme: "postgresql",
-		User:   url.UserPassword(d.User, d.Credential),
-		Host:   net.JoinHostPort(d.Host, d.Port),
-		Path:   "/" + d.Name,
-	}
-	query := connURL.Query()
-	query.Set("sslmode", d.SSLMode)
-	connURL.RawQuery = query.Encode()
-
-	return pgxpool.ParseConfig(connURL.String())
+func (d DBConfig) DSN() string {
+	return fmt.Sprintf(
+		"host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
+		d.Host, d.Port, d.Name, d.User, d.Password, d.SSLMode,
+	)
 }
