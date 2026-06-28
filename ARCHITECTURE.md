@@ -67,11 +67,10 @@ catalog-service/
     namespace.yaml                # namespace: catalog
     serviceaccount.yaml           # ServiceAccount: catalog-service  (see §6 — keep this!)
     postgres.yaml                 # dev Postgres Deployment + Service (demo/sandbox only)
-    db-credentials.secret.yaml    # THE STATIC SECRET — tier-1 "before" (see §5)
-    deployment.yaml               # app Deployment, runs as the catalog-service SA
+    deployment.yaml               # app Deployment — DB creds via VSO-managed Secret
     service.yaml                  # ClusterIP Service
   Dockerfile
-  docker-compose.yaml             # local: app + postgres, static creds
+  docker-compose.yaml             # local: app + postgres, env-supplied creds
   README.md
 ```
 
@@ -87,7 +86,7 @@ DB_HOST       e.g. postgres.catalog.svc.cluster.local
 DB_PORT       e.g. 5432
 DB_NAME       e.g. catalog
 DB_USER       e.g. catalog_app
-DB_PASSWORD   e.g. (static password, tier-1)
+DB_PASSWORD   supplied at runtime by VSO-managed Secret
 DB_SSLMODE    e.g. disable (demo) / require (prod)
 PORT          HTTP listen port, default 8080
 ```
@@ -105,28 +104,12 @@ requirement; the demo injects credentials before the pod starts.)
 
 ---
 
-## 5. The deliberate tier-1 state (build this, do not "fix" it)
+## 5. Credential delivery (tier-4)
 
-Credentials are delivered as a **static Kubernetes Secret** that the Deployment mounts as
-environment variables. This is the pattern Wath will later replace. Build it exactly:
-
-```yaml
-# deploy/db-credentials.secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: db-credentials
-  namespace: catalog
-type: Opaque
-stringData:
-  DB_USER: catalog_app
-  DB_PASSWORD: "static-demo-password-change-me"   # long-lived, static — the tier-1 smell
-```
-
-The Deployment sources these via `envFrom: [{ secretRef: { name: db-credentials } }]` (plus the
-non-secret `DB_HOST`/`DB_NAME`/etc. as plain env). The password is static, long-lived, and
-committed as a manifest — exactly the realistic "before" the demo improves on. **Leave it that
-way.**
+Credentials are delivered by the Vault Secrets Operator (`VaultDynamicSecret`) into a Kubernetes
+Secret (`my-service-db`). The Deployment sources `DB_USER` and `DB_PASSWORD` via
+`secretKeyRef` (plus non-secret `DB_HOST`/`DB_NAME`/etc. as plain env). No static credentials
+are committed to the repository.
 
 ---
 
@@ -172,8 +155,8 @@ one-liner for the cluster. The app does not need a migration framework.
 
 ## 8. Local development
 
-`docker-compose.yaml` brings up Postgres + the app with the **same static-credential pattern** as
-the cluster (env from a compose `environment:` block standing in for the Secret). After
+`docker-compose.yaml` brings up Postgres + the app with credentials supplied via environment
+variables (standing in for the VSO-managed Secret in cluster). After
 `docker compose up`, all four endpoints work and `/products` returns the three seed rows. This is
 how you self-check the build.
 
@@ -182,8 +165,8 @@ how you self-check the build.
 ## 9. Signals the onboarding will detect (so the demo reads well)
 
 You don't act on these, but building them faithfully makes the live detection step legible. The
-onboarding keys on: a **static credential** in `db-credentials.secret.yaml`, the app reading
-`DB_USER`/`DB_PASSWORD` from env, **no Vault wiring of any kind**, a read-only data access pattern,
+onboarding keys on: credentials sourced from a VSO-managed Secret, the app reading
+`DB_USER`/`DB_PASSWORD` from env, Vault dynamic-secret wiring in `k8s/`, and a read-write data access pattern,
 a dedicated ServiceAccount, and a declared runtime of Kubernetes. Keep all of these true and
 unambiguous.
 
@@ -197,32 +180,18 @@ unambiguous.
 3. `kubectl apply -f deploy/` (with a cluster + the dev Postgres) yields a running pod under the
    `catalog-service` ServiceAccount in namespace `catalog`, passing readiness.
 4. Credential reading is confined to `internal/config/config.go`.
-5. There is **zero** reference to Vault, dynamic secrets, VSO, the Agent Injector, AppRole, or
-   Kubernetes auth anywhere in the repo.
+5. Vault integration artifacts (`integration.params.json`, `vault/`, `k8s/`, `.github/workflows/vault-verify.yml`)
+   are present and conform to the vault-dynamic-secrets standard.
 
 ---
 
-## 11. Non-goals — do **not** build these (this is the demo)
+## 11. Vault integration artifacts
 
-- **No HashiCorp Vault integration.** No Vault client, no `vault` config, no policies, no roles.
-- **No dynamic secrets, no Vault Secrets Operator, no Agent Injector annotations.**
-- **No secret-management refactor.** The static Secret stays static.
-- **No auth method setup** (Kubernetes auth, AppRole, JWT/workload identity).
-- **No CI workflow for secret verification.**
-- **No `.cursor/` onboarding artifacts** (rules, `mcp.json`, requirements). Those belong to the
-  Wath onboarding layer and are added separately.
+This repository ships tier-4 Vault dynamic database secret integration:
 
-If you find yourself improving how this app handles credentials, stop — that improvement *is* the
-demo, and it is performed live by Wath, not by you.
-
----
-
-## 12. How this fits the larger demo (FYI, not build scope)
-
-This repository is the **consumer repo**. After it exists in this tier-1 state, the Wath onboarding
-layer is added on top: an `INTEGRATION_REQUIREMENTS.md` describing this app's environment and
-intent, the `.cursor/rules/*.mdc` and `.cursor/mcp.json` that let `@wath onboard` run here, and —
-produced live during the demo — the integration PR (Vault policy, auth role, `VaultDynamicSecret`
-CR, updated Deployment wiring, and a shipped verification workflow) that carries this service from
-the static Secret above to short-lived, dynamic, least-privilege database credentials. None of that
-is your concern for this build. Deliver the clean tier-1 service.
+- `integration.params.json` — typed source of truth
+- `vault/policy.hcl` — least-privilege read on `database/creds/my-service`
+- `vault/auth-kubernetes-role.json` — Kubernetes auth role bound to `my-service` SA
+- `k8s/vso-dynamic-secret.yaml` — VSO `VaultDynamicSecret` CRs for dev and prod
+- `k8s/deployment.yaml` — Deployment wired to VSO-managed Secret
+- `.github/workflows/vault-verify.yml` — durable conformance verification (VDS-008)
