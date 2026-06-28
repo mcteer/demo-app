@@ -1,8 +1,7 @@
 # catalog-service
 
-A small, read-only HTTP API over a Postgres `products` table. This service is the "before" state
-for a live onboarding demo — it uses static database credentials delivered via environment variables
-(the tier-1 pattern that Wath will later replace with dynamic secrets).
+A small HTTP API over a Postgres `products` table. Database credentials are delivered via
+HashiCorp Vault dynamic secrets through the Vault Secrets Operator (tier-4).
 
 ## Endpoints
 
@@ -41,7 +40,7 @@ All database configuration is read from environment variables in `internal/confi
 | `DB_PORT`     | `5432`                               |
 | `DB_NAME`     | `catalog`                            |
 | `DB_USER`     | `catalog_app`                        |
-| `DB_PASSWORD` | (static password)                    |
+| `DB_PASSWORD` | supplied by VSO-managed Secret       |
 | `DB_SSLMODE`  | `disable` (demo) / `require` (prod)  |
 | `PORT`        | `8080` (default)                     |
 
