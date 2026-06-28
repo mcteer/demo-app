@@ -41,7 +41,7 @@ All database configuration is read from environment variables in `internal/confi
 | `DB_PORT`     | `5432`                               |
 | `DB_NAME`     | `catalog`                            |
 | `DB_USER`     | `catalog_app`                        |
-| `DB_PASSWORD` | (static password)                    |
+| `DB_PASSWORD` | (from VSO-managed Secret locally via env) |
 | `DB_SSLMODE`  | `disable` (demo) / `require` (prod)  |
 | `PORT`        | `8080` (default)                     |
 

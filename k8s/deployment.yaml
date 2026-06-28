@@ -1,30 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: catalog-service
-  namespace: catalog
+  name: my-service
+  namespace: my-ns-dev
   labels:
-    app: catalog-service
+    app: my-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: catalog-service
+      app: my-service
   template:
     metadata:
       labels:
-        app: catalog-service
+        app: my-service
     spec:
-      serviceAccountName: catalog-service
+      serviceAccountName: my-service
       containers:
-        - name: catalog-service
-          image: catalog-service:latest
+        - name: my-service
+          image: my-service:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+              name: http
           env:
             - name: DB_HOST
-              value: postgres.catalog.svc.cluster.local
+              value: postgres.my-ns-dev.svc.cluster.local
             - name: DB_PORT
               value: "5432"
             - name: DB_NAME
@@ -33,6 +34,7 @@ spec:
               value: disable
             - name: PORT
               value: "8080"
+            # Tier-4: credentials sourced from VSO-managed Secret (no static creds in manifest)
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
@@ -46,13 +48,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: http
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /readyz
-              port: 8080
+              port: http
             initialDelaySeconds: 5
             periodSeconds: 5
           resources:
