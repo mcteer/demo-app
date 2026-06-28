@@ -1,0 +1,12 @@
+{
+  "standard": "vault-dynamic-secrets",
+  "verified_at": "2026-06-28T10:54:54.707528+00:00",
+  "auth_stand_in": "jwt",
+  "bound_subject": "system:serviceaccount:my-ns-dev:my-service",
+  "creds_path": "database/creds/my-service",
+  "lease_duration_seconds": 900,
+  "max_ttl_seconds": 1800,
+  "postgres_query": "SELECT COUNT(*) FROM orders.orders",
+  "order_count": 0,
+  "result": "pass"
+}
