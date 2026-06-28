@@ -2,3 +2,4 @@ catalog-service
 bin/
 *.exe
 .DS_Store
+.env

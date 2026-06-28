@@ -86,8 +86,8 @@ environment variables:
 DB_HOST       e.g. postgres.catalog.svc.cluster.local
 DB_PORT       e.g. 5432
 DB_NAME       e.g. catalog
-DB_USER       e.g. catalog_app
-DB_PASSWORD   e.g. (static password, tier-1)
+DB_USER       from VSO-managed Kubernetes Secret (key: username)
+DB_PASSWORD   from VSO-managed Kubernetes Secret (key: password)
 DB_SSLMODE    e.g. disable (demo) / require (prod)
 PORT          HTTP listen port, default 8080
 ```
@@ -105,28 +105,13 @@ requirement; the demo injects credentials before the pod starts.)
 
 ---
 
-## 5. The deliberate tier-1 state (build this, do not "fix" it)
+## 5. Credential delivery (tier-4)
 
-Credentials are delivered as a **static Kubernetes Secret** that the Deployment mounts as
-environment variables. This is the pattern Wath will later replace. Build it exactly:
+Credentials are issued by Vault's database secrets engine and delivered to the pod by the
+Vault Secrets Operator (`VaultDynamicSecret` CR). The Deployment references the VSO-managed
+Secret via `secretKeyRef` for `DB_USER` and `DB_PASSWORD` — no static credentials in manifests.
 
-```yaml
-# deploy/db-credentials.secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: db-credentials
-  namespace: catalog
-type: Opaque
-stringData:
-  DB_USER: catalog_app
-  DB_PASSWORD: "static-demo-password-change-me"   # long-lived, static — the tier-1 smell
-```
-
-The Deployment sources these via `envFrom: [{ secretRef: { name: db-credentials } }]` (plus the
-non-secret `DB_HOST`/`DB_NAME`/etc. as plain env). The password is static, long-lived, and
-committed as a manifest — exactly the realistic "before" the demo improves on. **Leave it that
-way.**
+Local development uses `.env` (from `.env.example`, gitignored) for sandbox Postgres bootstrap only.
 
 ---
 
@@ -182,10 +167,8 @@ how you self-check the build.
 ## 9. Signals the onboarding will detect (so the demo reads well)
 
 You don't act on these, but building them faithfully makes the live detection step legible. The
-onboarding keys on: a **static credential** in `db-credentials.secret.yaml`, the app reading
-`DB_USER`/`DB_PASSWORD` from env, **no Vault wiring of any kind**, a read-only data access pattern,
-a dedicated ServiceAccount, and a declared runtime of Kubernetes. Keep all of these true and
-unambiguous.
+onboarding keys on: VSO-managed credentials via `secretKeyRef`, the app reading
+`DB_USER`/`DB_PASSWORD` from env, a dedicated ServiceAccount, and a declared runtime of Kubernetes.
 
 ---
 
@@ -197,23 +180,15 @@ unambiguous.
 3. `kubectl apply -f deploy/` (with a cluster + the dev Postgres) yields a running pod under the
    `catalog-service` ServiceAccount in namespace `catalog`, passing readiness.
 4. Credential reading is confined to `internal/config/config.go`.
-5. There is **zero** reference to Vault, dynamic secrets, VSO, the Agent Injector, AppRole, or
-   Kubernetes auth anywhere in the repo.
+5. Integration artifacts under `k8s/`, `vault/`, and `integration.params.json` conform to the
+   vault-dynamic-secrets standard (VDS-001 through VDS-008).
 
 ---
 
-## 11. Non-goals — do **not** build these (this is the demo)
+## 11. Vault dynamic secrets integration
 
-- **No HashiCorp Vault integration.** No Vault client, no `vault` config, no policies, no roles.
-- **No dynamic secrets, no Vault Secrets Operator, no Agent Injector annotations.**
-- **No secret-management refactor.** The static Secret stays static.
-- **No auth method setup** (Kubernetes auth, AppRole, JWT/workload identity).
-- **No CI workflow for secret verification.**
-- **No `.cursor/` onboarding artifacts** (rules, `mcp.json`, requirements). Those belong to the
-  Wath onboarding layer and are added separately.
-
-If you find yourself improving how this app handles credentials, stop — that improvement *is* the
-demo, and it is performed live by Wath, not by you.
+This service consumes tier-4 Vault dynamic database credentials via VSO. See `k8s/`, `vault/`,
+`integration.params.json`, and `.github/workflows/vault-verify.yml`.
 
 ---
 

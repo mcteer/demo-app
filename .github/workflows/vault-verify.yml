@@ -1,0 +1,37 @@
+name: Vault integration verify
+
+on:
+  pull_request:
+    paths:
+      - "vault/**"
+      - "k8s/**"
+      - "integration.params.json"
+  push:
+    branches: [main]
+    paths:
+      - "vault/**"
+      - "k8s/**"
+      - "integration.params.json"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Python deps
+        run: pip install -r standards/security/vault-dynamic-secrets/conformance/requirements.txt
+      - name: Install toolchain
+        run: |
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt-get update && sudo apt-get install -y vault
+          curl -L https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+      - name: Run conformance gate
+        run: |
+          WATH_ARTIFACT_ROOT="${{ github.workspace }}"
+          WATH_STANDARD_ROOT="${{ github.workspace }}/standards/security/vault-dynamic-secrets"
+          bash "${WATH_STANDARD_ROOT}/conformance/verify.sh"
