@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: catalog
       POSTGRES_USER: catalog_app
-      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: static-demo-password-change-me
     ports:
       - "5432:5432"
     volumes:
@@ -24,8 +24,8 @@ services:
       DB_HOST: postgres
       DB_PORT: "5432"
       DB_NAME: catalog
-      DB_USER: ${DB_USER:?set DB_USER for local development}
-      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD for local development}
+      DB_USER: catalog_app
+      DB_PASSWORD: static-demo-password-change-me
       DB_SSLMODE: disable
       PORT: "8080"
     depends_on:

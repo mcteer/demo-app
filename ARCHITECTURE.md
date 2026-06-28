@@ -67,7 +67,7 @@ catalog-service/
     namespace.yaml                # namespace: catalog
     serviceaccount.yaml           # ServiceAccount: catalog-service  (see §6 — keep this!)
     postgres.yaml                 # dev Postgres Deployment + Service (demo/sandbox only)
-    deployment.yaml               # app Deployment — DB creds via VSO-managed Secret
+    db-credentials.secret.yaml    # THE STATIC SECRET — tier-1 "before" (see §5)
     deployment.yaml               # app Deployment, runs as the catalog-service SA
     service.yaml                  # ClusterIP Service
   Dockerfile
@@ -110,10 +110,23 @@ requirement; the demo injects credentials before the pod starts.)
 Credentials are delivered as a **static Kubernetes Secret** that the Deployment mounts as
 environment variables. This is the pattern Wath will later replace. Build it exactly:
 
-Credentials are delivered by the Vault Secrets Operator (`VaultDynamicSecret`) into a Kubernetes
-Secret (`my-service-db`). The Deployment sources `DB_USER` and `DB_PASSWORD` via
-`secretKeyRef` (plus non-secret `DB_HOST`/`DB_NAME`/etc. as plain env). No static credentials
-are committed to the repository.
+```yaml
+# deploy/db-credentials.secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-credentials
+  namespace: catalog
+type: Opaque
+stringData:
+  DB_USER: catalog_app
+  DB_PASSWORD: "static-demo-password-change-me"   # long-lived, static — the tier-1 smell
+```
+
+The Deployment sources these via `envFrom: [{ secretRef: { name: db-credentials } }]` (plus the
+non-secret `DB_HOST`/`DB_NAME`/etc. as plain env). The password is static, long-lived, and
+committed as a manifest — exactly the realistic "before" the demo improves on. **Leave it that
+way.**
 
 ---
 
