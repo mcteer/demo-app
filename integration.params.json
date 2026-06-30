@@ -1,0 +1,17 @@
+{
+  "app_name": "my-service",
+  "runtime": "kubernetes",
+  "auth_method": "kubernetes",
+  "db_role": "my-service",
+  "default_ttl_seconds": 900,
+  "max_ttl_seconds": 1800,
+  "creds_path": "database/creds/my-service",
+  "policy_capabilities": ["read"],
+  "identity_binding": {
+    "policy_name": "my-service-db-rw",
+    "k8s_service_accounts": ["my-service"],
+    "k8s_namespaces": ["my-ns-dev", "my-ns-prod"]
+  },
+  "secret_delivery": "vso",
+  "creation_statements_summary": "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"{{name}}\"; GRANT USAGE ON SCHEMA public TO \"{{name}}\";"
+}
