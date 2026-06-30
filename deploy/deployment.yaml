@@ -22,6 +22,9 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: db-credentials
           env:
             - name: DB_HOST
               value: postgres.catalog.svc.cluster.local
@@ -33,16 +36,6 @@ spec:
               value: disable
             - name: PORT
               value: "8080"
-            - name: DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: app-db-credentials
-                  key: username
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: app-db-credentials
-                  key: password
           livenessProbe:
             httpGet:
               path: /healthz
