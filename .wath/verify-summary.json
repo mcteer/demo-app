@@ -1,0 +1,19 @@
+{
+  "standard": "vault-dynamic-secrets",
+  "artifact_root": "/workspace",
+  "verified_at": "2026-06-30T16:10:43.457385+00:00",
+  "static_gate": "pass",
+  "behavioral_gate": true,
+  "behavioral_evidence": {
+    "standard": "vault-dynamic-secrets",
+    "verified_at": "2026-06-30T16:10:43.425998+00:00",
+    "auth_stand_in": "jwt",
+    "bound_subject": "system:serviceaccount:my-ns-dev:my-service",
+    "creds_path": "database/creds/my-service",
+    "lease_duration_seconds": 900,
+    "max_ttl_seconds": 1800,
+    "postgres_query": "SELECT COUNT(*) FROM orders.orders",
+    "order_count": 0,
+    "result": "pass"
+  }
+}
