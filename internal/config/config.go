@@ -10,7 +10,7 @@ type DBConfig struct {
 	Port     string
 	Name     string
 	User     string
-	Pass     string
+	Password string
 	SSLMode  string
 }
 
@@ -26,13 +26,13 @@ func Load() (Config, error) {
 	}
 
 	db := DBConfig{
-		Host:    os.Getenv("DB_HOST"),
-		Port:    os.Getenv("DB_PORT"),
-		Name:    os.Getenv("DB_NAME"),
-		User:    os.Getenv("DB_USER"),
-		SSLMode: os.Getenv("DB_SSLMODE"),
+		Host:     os.Getenv("DB_HOST"),
+		Port:     os.Getenv("DB_PORT"),
+		Name:     os.Getenv("DB_NAME"),
+		User:     os.Getenv("DB_USER"),
+		Password: os.Getenv("DB_PASSWORD"),
+		SSLMode:  os.Getenv("DB_SSLMODE"),
 	}
-	db.Pass = os.Getenv("DB_PASSWORD")
 
 	if db.Host == "" {
 		return Config{}, fmt.Errorf("DB_HOST is required")
@@ -46,7 +46,7 @@ func Load() (Config, error) {
 	if db.User == "" {
 		return Config{}, fmt.Errorf("DB_USER is required")
 	}
-	if db.Pass == "" {
+	if db.Password == "" {
 		return Config{}, fmt.Errorf("DB_PASSWORD is required")
 	}
 	if db.SSLMode == "" {
@@ -62,6 +62,6 @@ func Load() (Config, error) {
 func (d DBConfig) DSN() string {
 	return fmt.Sprintf(
 		"host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
-		d.Host, d.Port, d.Name, d.User, d.Pass, d.SSLMode,
+		d.Host, d.Port, d.Name, d.User, d.Password, d.SSLMode,
 	)
 }

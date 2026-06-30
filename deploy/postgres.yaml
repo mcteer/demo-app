@@ -28,8 +28,8 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: postgres-bootstrap
-                  key: password
+                  name: db-credentials
+                  key: DB_PASSWORD
           volumeMounts:
             - name: init-sql
               mountPath: /docker-entrypoint-initdb.d
